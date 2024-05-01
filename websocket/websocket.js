@@ -2,6 +2,7 @@ const http = require("http");
 const WebSocket = require("ws");
 const Appointment = require("../models/appointmentModel");
 const Doctor = require("../models/doctorModel");
+const Message = require("../models/messagesModel");
 const Patient = require("../models/patientModel");
 const mongoose = require("mongoose");
 
@@ -18,7 +19,11 @@ const setupSocketServer = (server) => {
       if (data.doctor_id) {
         console.log(`Doctor id received: ${data.doctor_id}`);
         changeStreamSetup(data.doctor_id);
-        // sendDoctorAppointments(data.doctor_id);
+        sendDoctorAppointments(data.doctor_id);
+      }
+      if (data.doctor_receiver) {
+        messageStream(data.doctor_receiver);
+        sendDoctorMessages(data.doctor_receiver);
       }
     });
 
@@ -37,6 +42,18 @@ const setupSocketServer = (server) => {
     });
     await sendDoctorAppointments(doctor_id);
   };
+  const messageStream = async (doctor_id) => {
+    const doctorMessageStream = Message.watch();
+    doctorMessageStream.on("change", async (change) => {
+      if (
+        change.operationType === "insert" &&
+        change.fullDocument.receiver.id === doctor_id
+      ) {
+        // Call sendDoctorMessages to send the new message to the client
+        await sendDoctorMessages(doctor_id);
+      }
+    });
+  };
 
   const sendDoctorAppointments = async (doctor_id) => {
     try {
@@ -45,10 +62,6 @@ const setupSocketServer = (server) => {
       const appointment_ids = doctor.appointments.map(
         (appointment) => appointment._id
       );
-
-      // const patient
-
-      // const doctorPatients = await Patient;
 
       const doctorAppointments = await Appointment.find({
         _id: { $in: appointment_ids },
@@ -71,6 +84,29 @@ const setupSocketServer = (server) => {
         "Error sending appointments through websocket, error:  ",
         error
       );
+    }
+  };
+
+  const sendDoctorMessages = async (doctor_id) => {
+    try {
+      // console.log("doctor id for messages: ", doctor_id);
+      const messages = await Message.find({
+        "receiver.id": doctor_id,
+      }).sort({ createdAt: -1 });
+      // console.log(messages);
+
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN && doctor_id) {
+          client.send(
+            JSON.stringify({
+              type: "doctor messages",
+              message: messages,
+            })
+          );
+        }
+      });
+    } catch (error) {
+      console.log("Error sending messages through websocket, error:  ", error);
     }
   };
 

@@ -1,5 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const Appointment = require("../models/appointmentModel");
+const Doctor = require("../models/doctorModel");
 const AppointmentStatus = require("../models/appointmentStatusModel");
 const Patient = require("../models/patientModel");
 const { generateReferenceNum } = require("../functions/generateRefNum");
@@ -9,7 +10,7 @@ const mongoose = require("mongoose");
 const createAppointment = asyncHandler(async (req, res) => {
   const {
     date,
-    timeslot,
+    timeslot: { id, start, end },
     appointment_notes,
     patient: {
       first_name,
@@ -85,6 +86,10 @@ const createAppointment = asyncHandler(async (req, res) => {
     { $push: { appointments: appointment._id } }
   );
 
+  await Doctor.findByIdAndUpdate(doctor_id, {
+    $push: { appointments: { _id: appointment._id } },
+  });
+
   await AppointmentStatus.updateOne(
     { _id: appointmentStatus._id },
     { $set: { appointment_id: appointment._id } }
@@ -104,7 +109,7 @@ const getApointment = asyncHandler(async (req, res) => {
 
 const allAppointments = asyncHandler(async (req, res) => {
   try {
-    const { offset, limit, search } = req.query;
+    const { offset, limit, search, month } = req.query;
     const query = Appointment.find();
     if (offset) {
       query.skip(parseInt(offset));
@@ -113,7 +118,25 @@ const allAppointments = asyncHandler(async (req, res) => {
       query.limit(parseInt(limit));
     }
     if (search) {
-      query.or([{ "patient.name": { $regex: new RegExp(search, "i") } }]);
+      query.or([{ "patient.first_name": { $regex: new RegExp(search, "i") } }]);
+    }
+
+    if (month) {
+      const year = new Date().getFullYear(); // Assuming current year
+      const monthNumber = parseInt(month); // Convert month to number
+      const startDate = new Date(year, monthNumber - 1, 1, 0, 0, 0); // Start of month
+      const endDate = new Date(year, monthNumber, 0, 23, 59, 59); // End of month
+      console.log(startDate, endDate); // For debugging
+
+      console.log("Start Date:", startDate);
+      console.log("End Date:", endDate);
+
+      query.limit(parseInt(limit)).where({
+        date: {
+          $gte: startDate,
+          $lte: endDate,
+        },
+      });
     }
     const appointments = await query.exec();
     const array = appointments.map((appt) => ({ ...appt.toObject() }));

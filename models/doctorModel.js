@@ -56,17 +56,22 @@ const doctorSchema = mongoose.Schema(
         walk_in: [
           {
             timeslot_id: { type: mongoose.Schema.Types.ObjectId },
+            start: String,
+            end: String,
             is_available: Boolean,
           },
         ],
         booking: [
           {
             timeslot_id: { type: mongoose.Schema.Types.ObjectId },
+            start: String,
+            end: String,
             is_available: Boolean,
           },
         ],
       },
     ],
+    // occupied_slots: [{timeslot_id: { type: mongoose.Schema.Types.ObjectId }, date: date }]
 
     appointments: [
       {

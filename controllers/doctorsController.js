@@ -6,6 +6,12 @@ const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { generateTimeSlots } = require("../functions/generateTimeSlots");
+const {
+  generateTimeSlotsForCurrentMonth,
+} = require("../functions/generateMonthTimeSlots");
+const {
+  getActualDatesForCurrentMonth,
+} = require("../functions/getActualDates");
 const { format } = require("date-fns");
 
 //login
@@ -294,6 +300,18 @@ const updateDoctor = asyncHandler(async (req, res) => {
       }
     );
 
+    // const ohsample = doctor.operating_hours;
+    // const dfdsample = doctor.default_appt_duration;
+    // const days = doctor.operating_hours.map((oh) => oh.day);
+
+    console.log(doctor.schedule);
+    const dates = getActualDatesForCurrentMonth(doctor.schedule);
+
+    console.log(
+      "dates: ",
+      dates.map((d) => format(d, "MMMM d, yyyy"))
+    );
+
     if (req.body.operating_hours) {
       console.log(req.body.operating_hours);
       const slots = await generateTimeSlots(
@@ -389,6 +407,26 @@ const deleteDoctor = asyncHandler(async (req, res) => {
   }
 });
 
+const getTimeslotById = async (doctor_id, timeslot_id) => {
+  try {
+    const doctor = await Doctor.findOne({ _id: doctor_id });
+    // console.log(doctor.first_name, doctor.last_name);
+    if (!doctor) {
+      console.log("ERROR! Cannot find Doctor with ID: " + doctor_id);
+    }
+
+    const timeslot = doctor.timeslots.find((ts) => ts._id.equals(timeslot_id));
+
+    if (!timeslot) {
+      console.log("Cannot find timeslot.");
+    }
+    // console.log(timeslot);
+    return timeslot;
+  } catch (error) {
+    console.log("Failed to execute getTimeslotById", error);
+  }
+};
+
 module.exports = {
   doctorLogin,
   createDoctor,
@@ -397,4 +435,5 @@ module.exports = {
   deleteDoctor,
   allDoctors,
   doctorsByIds,
+  getTimeslotById,
 };

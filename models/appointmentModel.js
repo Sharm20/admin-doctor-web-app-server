@@ -3,8 +3,8 @@ const mongoose = require("mongoose");
 const appointmentSchema = mongoose.Schema(
   {
     reference_num: String,
-    date: String,
-    timeslot: Number, //index of timestamp
+    date: Date,
+    timeslot: mongoose.Schema.Types.ObjectId, //index of timestamp
     appointment_notes: String,
     patient: {
       _id: {

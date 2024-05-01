@@ -4,21 +4,28 @@ const patientSchema = mongoose.Schema(
   {
     first_name: { type: String, required: true },
     last_name: { type: String, required: true },
-    dob: { type: String, required: true },
-    sex: { type: String, required: true },
+    date_of_birth: { type: String, required: true },
+    gender: { type: String, required: true },
+    contact_num: { type: String, required: true },
+    contact_person: String,
+    contact_p_number: String,
+    contact_person_rel: String,
     appointments: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Appointment",
+        _id: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Appointment",
+        },
+        status: String,
       },
     ],
-
     contact_details: {
-      phone_number: { type: String, required: true },
+      phone_number: String,
       email: String,
     },
-    title: String,
-    marital_status: String,
+    // other patient details (maybe can be filled by the clinic only? or on the mobile app)
+    title: String, //Mr, Miss, Mrs
+    marital_status: String, //Single, Married
     religion: String,
     occupation: String,
     address: {
@@ -40,5 +47,4 @@ const patientSchema = mongoose.Schema(
   { timestamps: true }
 );
 
-const patientModel = new mongoose.model("Patient", patientSchema);
-module.exports = patientModel;
+module.exports = mongoose.model("Patient", patientSchema);

@@ -4,77 +4,22 @@ const mongoose = require("mongoose");
 
 // add Patient
 
-const createPatient = async (req, res) => {
-  const {
+const createPatient = asyncHandler(async (req, res) => {
+  console.log("req.body is: ", req.body);
+  const { first_name, last_name, date_of_birth, gender } = req.body;
+  if (!first_name || !last_name || !date_of_birth || !gender) {
+    res.status(400);
+    throw new Error("All fields are Mandatory");
+  }
+
+  const patient = await Patient.create({
     first_name,
     last_name,
-    dob,
-    sex,
-    appointments,
-    contact_details,
-    title,
-    marital_status,
-    religion,
-    occupation,
-    address,
-    emergency_contact,
-    philhealth_no,
-    employer,
-  } = req.body;
-
-  // //  extracted contact details request body
-  // const { phone_number: phoneNumber, email: Email } = req.body.contact_details;
-
-  // //   extracted address request body
-  // const {
-  //   street_name: streetName,
-  //   barangay: Barangay,
-  //   city: City,
-  //   zip_code: zipCode,
-  // } = req.body.address;
-
-  // //   extracted emergency contact request body
-  // const {
-  //   name: Name,
-  //   number: Number,
-  //   relationship: Relationship,
-  // } = req.body.emergency_contact;
-
-  if (!first_name || !last_name || !dob || !sex || !contact_details) {
-    return res
-      .status(400)
-      .json({ error: "Important informations should be present" });
-  }
-
-  try {
-    const patientExistence = await Patient.findOne({ first_name, last_name });
-
-    if (patientExistence)
-      return res.status(400).json({ error: "Patient profile already exists " });
-
-    const newPatient = await Patient.create({
-      first_name,
-      last_name,
-      dob,
-      sex,
-      appointments,
-      contact_details,
-      title,
-      marital_status,
-      religion,
-      occupation,
-      address,
-      emergency_contact,
-      philhealth_no,
-      employer,
-    });
-
-    return res.status(201).json({ ...newPatient._doc });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: error.message });
-  }
-};
+    date_of_birth,
+    gender,
+  });
+  res.status(200).json(patient);
+});
 
 // get Patient
 

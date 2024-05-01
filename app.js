@@ -1,6 +1,5 @@
 const express = require("express");
 const http = require("http");
-
 const errorHandler = require("./middlewares/errorHandler");
 const connectDB = require("./config/dbConnection");
 const dotenv = require("dotenv").config();
@@ -8,11 +7,16 @@ const morgan = require("morgan");
 const auth = require("./middlewares/auth");
 const bodyParser = require("body-parser");
 const app = express();
+const { smsScheduler, sendSMS } = require("./functions/scheduler");
 const port = process.env.PORT || 8080;
 const WSport = process.env.WSPORT || 3001;
 const User = require("./models/User");
 const mongoose = require("mongoose");
 const setupSocketServer = require("./websocket/websocket");
+const { receiveSMS } = require("./controllers/smsController");
+
+// send texts to all appointments scheduled tommorow
+smsScheduler();
 
 // websocket
 const server = http.createServer(app);
@@ -47,8 +51,11 @@ app.use("/api/doctors", require("./routes/doctorRoutes"));
 app.use("/api/patients", require("./routes/patientRoutes"));
 app.use("/api/specializations", require("./routes/specializationRoutes"));
 app.use("/api/users", require("./routes/User"));
+app.use("/api/sms", require("./routes/smsRoutes"));
+app.use("/api/calendar", require("./routes/calendarRoute"));
 
 app.listen(port, async () => {
+  sendSMS();
   await connectDB();
   console.log(`Server is running on ${port} \n`);
 });
@@ -57,3 +64,7 @@ server.listen(WSport, async () => {
   await connectDB();
   console.log(`Websocket running on port ${WSport}`);
 });
+
+app.use(bodyParser.urlencoded({ extended: false }));
+
+app.post("/sms", receiveSMS);

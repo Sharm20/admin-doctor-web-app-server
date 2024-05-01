@@ -4,7 +4,6 @@ const appointmentStatus = mongoose.Schema(
   {
     appointment_id: {
       type: mongoose.Schema.Types.ObjectId,
-      required: true,
       ref: "Appointment",
     },
 
