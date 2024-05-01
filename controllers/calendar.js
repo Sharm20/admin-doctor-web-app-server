@@ -2,7 +2,6 @@ const asyncHandler = require("express-async-handler");
 const Calendar = require("../models/calendar");
 const Doctor = require("../models/doctorModel");
 const Clinic = require("../models/clinicModel");
-
 const { isSameDay } = require("date-fns");
 
 // trigger the creation of the calendar
@@ -19,10 +18,8 @@ const createCalendar = asyncHandler(async (req, res) => {
   const doctorCalendarExists = await Calendar.findOne({
     doctor_id: _id,
   });
-  if (doctorCalendarExists) {
-    res.status(403);
-    throw new Error("Doctor Calendar already exists");
-  }
+  if (doctorCalendarExists)
+    return res.status(403).json({ error: "Doctor Calendar already exists" });
 
   const calendar = await Calendar.create({
     doctor_id: _id,
@@ -50,13 +47,14 @@ const createCalendar = asyncHandler(async (req, res) => {
 
     for (let i = 0; i < 90; i++) {
       const date = new Date(currentDate);
+      date.setHours(0, 0, 0, 0);
       date.setDate(date.getDate() + i);
 
-      const dayIndex = date.getDay();
+      const dayIndex = date.getDay() - 1;
 
       if (uniqueDayIndices.includes(dayIndex)) {
         dates.push({
-          date: date.toISOString(), // Format the date as ISO string
+          date: date.toISOString(),
           day_index: dayIndex,
         });
       }
@@ -95,6 +93,8 @@ const createCalendar = asyncHandler(async (req, res) => {
                 clinic_id: clinic_id,
                 clinic_code: clinic.clinic_code,
                 timeslot_id: bookItem.timeslot_id,
+                start: bookItem.start,
+                end: bookItem.end,
                 is_available: bookItem.is_available,
               });
             }
@@ -107,6 +107,8 @@ const createCalendar = asyncHandler(async (req, res) => {
                 clinic_id: clinic_id,
                 clinic_code: clinic.clinic_code,
                 timeslot_id: walkInItem.timeslot_id,
+                start: walkInItem.start,
+                end: walkInItem.end,
                 is_available: walkInItem.is_available,
               });
             }
@@ -120,6 +122,8 @@ const createCalendar = asyncHandler(async (req, res) => {
 
   calendar.calendar_days = calendarDays;
   await calendar.save();
+
+  await Doctor.updateOne({ _id: _id }, { $set: { calendar: calendar._id } });
 
   res.status(200).json({ message: "Calendar created successfully" });
 });
@@ -187,7 +191,7 @@ const getDoctorSchedulePerDay = asyncHandler(async (req, res) => {
     res.status(200).json(calendarDay);
   } catch (error) {
     console.error("Error retrieving calendar day:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(404).json({ message: "Error retrieving calendar day" });
   }
 });
 

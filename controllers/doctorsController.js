@@ -20,12 +20,14 @@ const doctorLogin = async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password)
-    return res.status(400).json({ error: "input everything" });
+    return res
+      .status(400)
+      .json({ error: "Please input username and password." });
 
   try {
     const userExistsinDB = await Doctor.findOne({ username });
     if (!userExistsinDB)
-      return res.status(400).json({ error: "User not in our database" });
+      return res.status(400).json({ error: "User not in our database." });
 
     const passwordMatch = await bcrypt.compare(
       password,
@@ -44,7 +46,7 @@ const doctorLogin = async (req, res) => {
 
     // console.log(passwordMatch);
     if (!passwordMatch)
-      return res.status(400).json({ error: "incorrect password" });
+      return res.status(400).json({ error: "Incorrect password." });
 
     const payload = { _id: userExistsinDB._id };
     const token = jwt.sign(payload, process.env.JWT_SECRETKEY, {
@@ -263,13 +265,43 @@ const updateDoctor = asyncHandler(async (req, res) => {
     }
   }
 
-  const { password, newPassword } = req.body;
+  //if password is changed
+
+  const { confirmPassword, password, newPassword } = req.body;
 
   if (password) {
     const passwordMatch = await bcrypt.compare(password, doctor.password);
     if (!passwordMatch)
-      return res.status(400).json({ error: "current password is incorrect" });
+      return res.status(400).json({ error: "Password is incorrect." });
   }
+
+  if (newPassword) {
+    const samePassword = await bcrypt.compare(newPassword, doctor.password);
+    console.log("same pass: ", samePassword);
+    if (samePassword)
+      return res.status(400).json({
+        error: "New password cannot be the same as the old password.",
+      });
+    if (!confirmPassword)
+      return res.status(400).json({
+        error: "Please confirm your new password.",
+      });
+
+    if (!password) {
+      return res.status(400).json({
+        error:
+          "Please provide your old password if you want to create a new one",
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        error:
+          "New password does not match the confirmation. Please confirm your password.",
+      });
+    }
+  }
+
   try {
     const updatedDoctor = await Doctor.findByIdAndUpdate(
       req.params.id,

@@ -6,7 +6,7 @@ const Message = require("../models/messagesModel");
 const { getTimeslotById } = require("../controllers/doctorsController");
 
 const smsScheduler = () => {
-  const time = "00 12 * * *";
+  const time = "50 15 * * *";
   cron.schedule(time, async () => {
     try {
       sendSMS();
@@ -67,7 +67,7 @@ const sendSMS = async () => {
       at.patient.last_name
     }, This  message is sent to remind you of your scheduled appointment tomorrow with Dr. ${
       at.doctor.last_name
-    } at ${timeslots.start + " - " + timeslots.end}. See you at Clinic ${
+    } at ${at.timeslot.start + " - " + at.timeslot.end}. See you at Clinic ${
       at.clinic.clinic_code
     }. (This test message is sent at 12:00 PM)`;
 
@@ -93,7 +93,7 @@ const sendSMS = async () => {
           },
         }
       );
-      console.log(response);
+      // console.log(response);
       console.log(payload);
       if (response.data) {
         try {

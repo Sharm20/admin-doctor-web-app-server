@@ -12,6 +12,7 @@ const createAppointment = asyncHandler(async (req, res) => {
     date,
     timeslot: { id, start, end },
     appointment_notes,
+    isBooking,
     patient: {
       first_name,
       last_name,
@@ -24,6 +25,7 @@ const createAppointment = asyncHandler(async (req, res) => {
     clinic: { clinic_id, clinic_code },
     doctor: { doctor_id, doctor_first_name, doctor_last_name },
   } = req.body;
+  console.log(date);
 
   const newPatient = await Patient.create({
     first_name,
@@ -39,20 +41,26 @@ const createAppointment = asyncHandler(async (req, res) => {
     status: "Pending",
   });
 
-  const startOfDay = new Date(); // Set to the start of the day
-  const endOfDay = new Date(); // Set to the end of the day
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date();
   endOfDay.setHours(23, 59, 59, 999);
 
   const appointmentCount = await Appointment.countDocuments({
     createdAt: { $gte: startOfDay, $lte: endOfDay },
   });
-  console.log(appointmentCount);
+
   const reference_num = await generateReferenceNum(appointmentCount);
 
   const appointment = await Appointment.create({
     reference_num,
     date,
-    timeslot,
+    timeslot: {
+      id: id,
+      start: start,
+      end: end,
+    },
+    isForBooking: isBooking,
     patient: {
       _id: newPatient._id,
       first_name: newPatient.first_name,
@@ -80,22 +88,71 @@ const createAppointment = asyncHandler(async (req, res) => {
       first_name: doctor_first_name,
     },
   });
+  // console.log(appointment);
 
   await Patient.updateOne(
     { _id: newPatient._id },
-    { $push: { appointments: appointment._id } }
+    {
+      $push: {
+        appointments: {
+          $each: [{ _id: appointment._id }],
+          $position: 0,
+        },
+      },
+    }
   );
 
-  await Doctor.findByIdAndUpdate(doctor_id, {
-    $push: { appointments: { _id: appointment._id } },
-  });
+  await Doctor.updateOne(
+    { _id: doctor_id },
+    {
+      $push: {
+        appointments: {
+          $each: [{ _id: appointment._id }],
+          $position: 0,
+        },
+      },
+    }
+  );
 
   await AppointmentStatus.updateOne(
     { _id: appointmentStatus._id },
     { $set: { appointment_id: appointment._id } }
   );
 
-  res.status(201).json({ message: "Appointment created", appointment });
+  try {
+    console.log(doctor_id, id, date);
+    const bookType = isBooking ? "bookable" : "walk-in";
+    const updateCalendar = await Calendar.updateOne(
+      {
+        doctor_id: doctor_id,
+        "calendar_days.date": new Date(date),
+        "calendar_days.bookable.timeslot_id": id,
+      },
+      {
+        $set: {
+          "calendar_days.$[outer].bookable.$[inner].is_available": false,
+        },
+        $inc: {
+          "calendar_days.$[outer].bookable_count": -1,
+        },
+      },
+      {
+        arrayFilters: [
+          { "outer.date": new Date(date) },
+          { "inner.timeslot_id": id },
+        ],
+      }
+    );
+    console.log("Update Result:", updateCalendar);
+  } catch (error) {
+    console.error("Error updating calendar:", error);
+  }
+
+  // await handlePrint({ appointment });
+
+  res
+    .status(201)
+    .json({ message: `Appointment ${reference_num} created`, reference_num });
 });
 
 // read
