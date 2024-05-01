@@ -6,11 +6,11 @@ const Message = require("../models/messagesModel");
 const { getTimeslotById } = require("../controllers/doctorsController");
 
 const smsScheduler = () => {
-  const time = "50 15 * * *";
+  const time = "00 12 * * *";
   cron.schedule(time, async () => {
     try {
       sendSMS();
-      console.log("Scheduled to run at 12:00");
+      console.log("Scheduled to run at 12 noon");
     } catch (error) {
       console.error("Error in scheduler:", error);
     }
@@ -82,8 +82,8 @@ const sendSMS = async () => {
     };
 
     try {
-      const response = await axios.post(
-        "https://rgxdn1.api.infobip.com/sms/2/text/advanced",
+      const response =
+        await ("https://rgxdn1.api.infobip.com/sms/2/text/advanced",
         payload,
         {
           headers: {
@@ -91,10 +91,9 @@ const sendSMS = async () => {
             Authorization:
               "App f137b8f5f60e3c8ba83ff05fd09277e0-5c40c0b2-0ee4-44d4-8435-cf6431a6c963", // Replace with your API key
           },
-        }
-      );
+        });
       // console.log(response);
-      console.log(payload);
+      // console.log(payload);
       if (response.data) {
         try {
           const newMessage = await Message.create({
@@ -103,7 +102,7 @@ const sendSMS = async () => {
             message: message,
             type: "outbound",
           });
-          console.log(message);
+          // console.log(message);
         } catch (error) {
           console.log(error);
         }

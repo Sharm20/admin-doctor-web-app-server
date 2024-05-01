@@ -30,28 +30,29 @@ const sendSMS = async (req, res) => {
         message: message,
         type: "outbound",
       });
-      return res.status(201).json({ ...newMessage._doc });
+
+      // Send POST request to Infobip API
+      const response = await axios.post(
+        "https://y3y8md.api.infobip.com/sms/2/text/advanced",
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization:
+              "App 849b4dcd15f41b37c9b35b6e88cdc936-4cb6c855-979a-4f96-a437-193796c83616", // Replace with your API key
+          },
+        }
+      );
+
+      return res
+        .status(201)
+        .json({ message: "Message sent!", ...newMessage._doc });
     } catch (error) {
       console.log(error);
       return res.status(500).json({ error: error.message });
     }
 
-    // Send POST request to Infobip API
-    const response = await axios.post(
-      "https://rgxdn1.api.infobip.com/sms/2/text/advanced",
-      payload,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization:
-            "App f137b8f5f60e3c8ba83ff05fd09277e0-5c40c0b2-0ee4-44d4-8435-cf6431a6c963", // Replace with your API key
-        },
-      }
-    );
-
     // Handle response from Infobip API
-    console.log("SMS sent successfully:", response.data);
-    res.status(200).json({ success: true, message: "SMS sent successfully" });
   } catch (error) {
     console.error("Error sending SMS:", error.response?.data || error.message);
     res.status(500).json({ success: false, error: "Failed to send SMS" });
@@ -89,7 +90,7 @@ const receiveSMS = async (req, res) => {
 
   if (!sender_appointment) {
     console.log(
-      `The appointment with a reference number ${reference_num} was not found`
+      `The appointment with a reference number "${reference_num}" was not found`
     );
   }
   try {

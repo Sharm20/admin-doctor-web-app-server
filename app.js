@@ -55,7 +55,7 @@ app.use("/api/sms", require("./routes/smsRoutes"));
 app.use("/api/calendar", require("./routes/calendarRoute"));
 
 app.listen(port, async () => {
-  sendSMS();
+  // sendSMS();
   await connectDB();
   console.log(`Server is running on ${port} \n`);
 });

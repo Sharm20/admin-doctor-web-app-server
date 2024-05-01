@@ -27,6 +27,16 @@ const createAppointment = asyncHandler(async (req, res) => {
   } = req.body;
   console.log(date);
 
+  //to restrict same schedule for the mean time
+
+  // const appointmentExists = Appointment.find({ timeslot: req.body.timeslot });
+
+  // if (appointmentExists)
+  //   return res.status(400).json({
+  //     error:
+  //       "An Appointment with the same schedule is found. Please choose another schedule.",
+  //   });
+
   const newPatient = await Patient.create({
     first_name,
     last_name,

@@ -183,9 +183,10 @@ const getDoctorSchedulePerDay = asyncHandler(async (req, res) => {
     });
 
     if (!calendarDay) {
-      return res
-        .status(404)
-        .json({ message: "Appointment slots not found for the chosen date" });
+      return res.status(404).json({
+        message:
+          "There are no available schedule found for the chosen date. Choose another date.",
+      });
     }
 
     res.status(200).json(calendarDay);
