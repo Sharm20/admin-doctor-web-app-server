@@ -83,8 +83,8 @@ const sendSMS = async () => {
     };
 
     try {
-      const response =
-        await ("https://rgxdn1.api.infobip.com/sms/2/text/advanced",
+      const response = await axios.post(
+        "https://rgxdn1.api.infobip.com/sms/2/text/advanced",
         payload,
         {
           headers: {
@@ -92,7 +92,8 @@ const sendSMS = async () => {
             Authorization:
               "App f137b8f5f60e3c8ba83ff05fd09277e0-5c40c0b2-0ee4-44d4-8435-cf6431a6c963", // Replace with your API key
           },
-        });
+        }
+      );
       // console.log(response);
       // console.log(payload);
       if (response.data) {

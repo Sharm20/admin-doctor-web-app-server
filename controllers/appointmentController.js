@@ -31,7 +31,10 @@ const createAppointment = asyncHandler(async (req, res) => {
 
   //to restrict same schedule for the mean time
 
-  // const appointmentExists = Appointment.find({ timeslot: req.body.timeslot });
+  // const appointmentExists = Appointment.findOne({
+  //   date: date,
+  //   "timeslot.id": id,
+  // });
 
   // if (appointmentExists)
   //   return res.status(400).json({
@@ -265,6 +268,57 @@ const reschedAppointment = asyncHandler(async (req, res) => {
     timeslot_id,
   });
   // console.log("appt exists: ", appointmentExists.data);
+
+  console.log("cancelled appointment: ", appointment._id);
+  console.log("cancelled appointment doctor: ", appointment.doctor._id);
+  try {
+    const updateCalendar = await Calendar.updateOne(
+      {
+        doctor_id: appointment.doctor._id,
+        "calendar_days.date": new Date(appointment.date),
+        "calendar_days.bookable.timeslot_id": appointment.timeslot.id,
+      },
+      {
+        $set: {
+          "calendar_days.$[outer].bookable.$[inner].is_available": true,
+        },
+        $inc: {
+          "calendar_days.$[outer].bookable_count": +1,
+        },
+      },
+      {
+        arrayFilters: [
+          { "outer.date": new Date(appointment.date) },
+          { "inner.timeslot_id": appointment.timeslot.id },
+        ],
+      }
+    );
+
+    await Calendar.updateOne(
+      {
+        doctor_id: appointment.doctor._id,
+        "calendar_days.date": new Date(date),
+        "calendar_days.bookable.timeslot_id": timeslot_id,
+      },
+      {
+        $set: {
+          "calendar_days.$[outer].bookable.$[inner].is_available": false,
+        },
+        $inc: {
+          "calendar_days.$[outer].bookable_count": +1,
+        },
+      },
+      {
+        arrayFilters: [
+          { "outer.date": new Date(date) },
+          { "inner.timeslot_id": timeslot_id },
+        ],
+      }
+    );
+    console.log("Update Result of old:", updateCalendar);
+  } catch (error) {
+    console.error("Error updating calendar:", error);
+  }
 
   if (appointmentExists) {
     return res.status(400).json({

@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const AppointmentStatus = require("../models/appointmentStatusModel");
 const Appointment = require("../models/appointmentModel");
+const Calendar = require("../models/calendar");
 const mongoose = require("mongoose");
 
 // create
@@ -34,6 +35,38 @@ const createAppointmentStatus = async (req, res) => {
         },
       }
     );
+
+    if (status === "Cancelled") {
+      const cancelledAppt = await Appointment.findOne({ _id: appointment_id });
+      console.log("cancelled appointment: ", cancelledAppt);
+      console.log("cancelled appointment doctor: ", cancelledAppt.doctor._id);
+      try {
+        const updateCalendar = await Calendar.updateOne(
+          {
+            doctor_id: cancelledAppt.doctor._id,
+            "calendar_days.date": new Date(cancelledAppt.date),
+            "calendar_days.bookable.timeslot_id": cancelledAppt.timeslot.id,
+          },
+          {
+            $set: {
+              "calendar_days.$[outer].bookable.$[inner].is_available": true,
+            },
+            $inc: {
+              "calendar_days.$[outer].bookable_count": +1,
+            },
+          },
+          {
+            arrayFilters: [
+              { "outer.date": new Date(cancelledAppt.date) },
+              { "inner.timeslot_id": cancelledAppt.timeslot.id },
+            ],
+          }
+        );
+        console.log("Update Result:", updateCalendar);
+      } catch (error) {
+        console.error("Error updating calendar:", error);
+      }
+    }
 
     return res.status(201).json({ ...newAppointmentStatus._doc });
   } catch (error) {
