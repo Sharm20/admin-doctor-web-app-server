@@ -18,7 +18,10 @@ const sendSMS = async (req, res) => {
         {
           from: "ServiceSMS", // Replace with your sender ID
           destinations: [{ to: phoneNumber }],
-          text: message,
+          text:
+            message +
+            ` Should you wish to reach us regarding the status of your appointment, please message us at +639763177491. Message format: <Reference No.> <message>. 
+          e.g. "MAK1234567 I Confirm."`,
         },
       ],
     };
@@ -27,7 +30,10 @@ const sendSMS = async (req, res) => {
       const newMessage = await Message.create({
         sender: sender_id,
         receiver: phoneNumber,
-        message: message,
+        message:
+          message +
+          ` Should you wish to reach us regarding the status of your appointment, please message us at +639763177491. Message format: <Reference No.> <message>. 
+          e.g. "MAK1234567 I Confirm.`,
         type: "outbound",
       });
 

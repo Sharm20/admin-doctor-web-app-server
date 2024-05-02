@@ -3,8 +3,10 @@ const Appointment = require("../models/appointmentModel");
 const Doctor = require("../models/doctorModel");
 const AppointmentStatus = require("../models/appointmentStatusModel");
 const Patient = require("../models/patientModel");
+const Calendar = require("../models/calendar");
 const { generateReferenceNum } = require("../functions/generateRefNum");
 const mongoose = require("mongoose");
+const { application } = require("express");
 
 // create
 const createAppointment = asyncHandler(async (req, res) => {
@@ -36,6 +38,8 @@ const createAppointment = asyncHandler(async (req, res) => {
   //     error:
   //       "An Appointment with the same schedule is found. Please choose another schedule.",
   //   });
+
+  // const updateTimeslotAvailability = Ca
 
   const newPatient = await Patient.create({
     first_name,
@@ -248,10 +252,48 @@ const deleteAppointment = asyncHandler(async (req, res) => {
   return res.status(204).json({ message: "Appointment has been deleted" });
 });
 
+const reschedAppointment = asyncHandler(async (req, res) => {
+  const appointment = await Appointment.findById(req.params.id);
+  if (!appointment) {
+    res.status(400);
+    throw new Error("Appointment not found");
+  }
+  const { date, timeslot_id, start, end } = req.body;
+  console.log("request body: ", req.body);
+  const appointmentExists = await Appointment.findOne({
+    date,
+    timeslot_id,
+  });
+  // console.log("appt exists: ", appointmentExists.data);
+
+  if (appointmentExists) {
+    return res.status(400).json({
+      error:
+        "An Appointment with the same schedule is found. Please choose another schedule.",
+    });
+  }
+
+  const updated = await Appointment.updateOne(
+    { _id: req.params.id },
+    {
+      $set: {
+        date: date,
+        "timeslot.id": timeslot_id,
+        "timeslot.start": start,
+        "timeslot.end": end,
+      },
+    }
+  );
+  // .then(console.log("updated: ", appointment));
+
+  res.status(200).json({ message: "Appointment rescheduled" });
+});
+
 module.exports = {
   createAppointment,
   getApointment,
   updateAppointment,
   deleteAppointment,
   allAppointments,
+  reschedAppointment,
 };

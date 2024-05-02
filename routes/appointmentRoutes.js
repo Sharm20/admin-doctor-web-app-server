@@ -6,6 +6,7 @@ const {
   updateAppointment,
   deleteAppointment,
   allAppointments,
+  reschedAppointment,
 } = require("../controllers/appointmentController");
 
 router.route("/create").post(createAppointment);
@@ -15,5 +16,6 @@ router
   .get(getApointment)
   .put(updateAppointment)
   .delete(deleteAppointment);
+router.route("/resched/:id").put(reschedAppointment);
 
 module.exports = router;

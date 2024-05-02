@@ -37,7 +37,7 @@ const setupSocketServer = (server) => {
     const doctorChangeStream = Doctor.watch({ $match: { _id: doctor_id } });
     console.log(doctor_id);
     doctorChangeStream.on("change", async (change) => {
-      console.log("Changes to Doctor's collection detected: ", change);
+      // console.log("Changes to Doctor's collection detected: ", change);
       await sendDoctorAppointments(doctor_id);
     });
     await sendDoctorAppointments(doctor_id);

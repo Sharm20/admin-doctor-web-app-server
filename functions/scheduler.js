@@ -69,7 +69,8 @@ const sendSMS = async () => {
       at.doctor.last_name
     } at ${at.timeslot.start + " - " + at.timeslot.end}. See you at Clinic ${
       at.clinic.clinic_code
-    }. (This test message is sent at 12:00 PM)`;
+    }.  Should you wish to reach us regarding the status of your appointment, please message us at +639763177491. Message format: <Reference No.> <message>. 
+          e.g. "MAK1234567 I Confirm."`;
 
     const payload = {
       messages: [
